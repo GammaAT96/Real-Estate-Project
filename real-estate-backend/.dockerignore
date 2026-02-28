@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+
+# Build output (gets generated inside Docker, not needed in context)
+dist
+
+# Local env files — secrets must NOT go into the image
+.env
+.env.*
+
+# Version control
+.git
+.gitignore
+
+# Docker files themselves (not needed in build context)
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
+.dockerignore
+
+# Editor & OS
+.vscode
+.idea
+*.DS_Store
+Thumbs.db
+
+# Logs & debug
+npm-debug.log*
+*.log
+
+# Temp TypeScript error files
+ts_errors*.txt
+tsc_*.txt
+
+# Test files (if you add later)
+**/*.test.ts
+**/*.spec.ts

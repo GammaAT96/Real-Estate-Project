@@ -1,0 +1,152 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum Role {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  AGENT
+}
+
+enum ProjectStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum PlotStatus {
+  AVAILABLE
+  BOOKED
+  SOLD
+}
+
+enum BookingStatus {
+  ACTIVE
+  CANCELLED
+}
+
+//////////////////////////////////////////////////////
+// MODELS
+//////////////////////////////////////////////////////
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users         User[]
+  projects      Project[]
+  sales         Sale[]
+  refreshTokens RefreshToken[]
+}
+
+//////////////////////////////////////////////////////
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  bookings      Booking[]
+  sales         Sale[]
+  refreshTokens RefreshToken[]
+}
+
+//////////////////////////////////////////////////////
+
+model Project {
+  id        String        @id @default(uuid())
+  name      String
+  location  String
+  status    ProjectStatus @default(ACTIVE)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  plots Plot[]
+}
+
+//////////////////////////////////////////////////////
+
+model Plot {
+  id         String     @id @default(uuid())
+  plotNumber String
+  area       Float
+  price      Float
+  status     PlotStatus @default(AVAILABLE)
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  bookings Booking[]
+  sale     Sale?
+
+  @@unique([plotNumber, projectId])
+}
+
+//////////////////////////////////////////////////////
+
+model Booking {
+  id            String        @id @default(uuid())
+  clientName    String
+  bookingAmount Float
+  bookingDate   DateTime      @default(now())
+  status        BookingStatus @default(ACTIVE)
+
+  plotId String
+  plot   Plot   @relation(fields: [plotId], references: [id])
+
+  agentId String
+  agent   User   @relation(fields: [agentId], references: [id])
+}
+
+//////////////////////////////////////////////////////
+
+model Sale {
+  id         String   @id @default(uuid())
+  plotId     String   @unique
+  agentId    String
+  companyId  String
+  saleAmount Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  isActive   Boolean  @default(true)
+
+  plot    Plot    @relation(fields: [plotId], references: [id])
+  agent   User    @relation(fields: [agentId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+}
+
+//////////////////////////////////////////////////////
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  companyId String?
+  expiresAt DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+}

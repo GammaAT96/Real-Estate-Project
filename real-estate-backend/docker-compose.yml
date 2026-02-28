@@ -1,0 +1,61 @@
+services:
+  # ─────────────────────────────
+  # MySQL 8 — Persistent Database
+  # ─────────────────────────────
+  mysql:
+    image: mysql:8
+    container_name: real_estate_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-real_estate_system}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - real_estate_net
+
+  # ─────────────────────────────
+  # Backend API — Production Build
+  # ─────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner # use the production runner stage
+    container_name: real_estate_backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD:-rootpassword}@mysql:3306/${MYSQL_DATABASE:-real_estate_system}
+      JWT_SECRET: ${JWT_SECRET:-changeme_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+    networks:
+      - real_estate_net
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:5000/health', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  real_estate_net:
+    driver: bridge
