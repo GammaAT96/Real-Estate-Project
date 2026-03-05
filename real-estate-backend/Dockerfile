@@ -8,8 +8,8 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install OpenSSL — required by Prisma binary engine
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && \
+# Install OpenSSL + libssl-dev — required by Prisma to detect & run schema engine
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl libssl-dev ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy manifests first for better layer caching
@@ -40,8 +40,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# OpenSSL required at runtime by Prisma
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && \
+# OpenSSL required at runtime by Prisma (libssl-dev ensures detection works)
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl libssl-dev ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy only what's needed at runtime

@@ -1,6 +1,7 @@
+
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -48,6 +49,8 @@ model Company {
   projects      Project[]
   sales         Sale[]
   refreshTokens RefreshToken[]
+
+  // NOTE: Company has no FK fields to index — it's the root tenant model
 }
 
 //////////////////////////////////////////////////////
@@ -66,6 +69,12 @@ model User {
   bookings      Booking[]
   sales         Sale[]
   refreshTokens RefreshToken[]
+
+  // companyId FK is already indexed by MySQL automatically
+  // Adding explicit indexes only for non-FK query patterns
+  @@index([role])
+  @@index([isActive])
+  @@index([role, isActive]) // composite: filter by role AND active
 }
 
 //////////////////////////////////////////////////////
@@ -82,6 +91,11 @@ model Project {
   company   Company @relation(fields: [companyId], references: [id])
 
   plots Plot[]
+
+  // companyId FK is already indexed by MySQL automatically
+  @@index([status])
+  @@index([isActive])
+  @@index([status, isActive]) // composite: list active projects by status
 }
 
 //////////////////////////////////////////////////////
@@ -102,6 +116,11 @@ model Plot {
   sale     Sale?
 
   @@unique([plotNumber, projectId])
+
+  // projectId FK is already indexed by MySQL automatically
+  @@index([status])
+  @@index([isActive])
+  @@index([status, isActive]) // composite: find available/booked/sold plots
 }
 
 //////////////////////////////////////////////////////
@@ -118,6 +137,11 @@ model Booking {
 
   agentId String
   agent   User   @relation(fields: [agentId], references: [id])
+
+  // plotId and agentId FK indexes created automatically by MySQL
+  @@index([status])
+  @@index([bookingDate]) // sort/filter by date
+  @@index([agentId, status]) // composite: agent's active bookings
 }
 
 //////////////////////////////////////////////////////
@@ -134,6 +158,11 @@ model Sale {
   plot    Plot    @relation(fields: [plotId], references: [id])
   agent   User    @relation(fields: [agentId], references: [id])
   company Company @relation(fields: [companyId], references: [id])
+
+  // plotId, agentId, companyId FK indexes created automatically by MySQL
+  @@index([createdAt]) // sort by date
+  @@index([companyId, createdAt]) // tenant revenue queries (dashboard trends)
+  @@index([agentId, createdAt])   // agent performance queries
 }
 
 //////////////////////////////////////////////////////
@@ -149,4 +178,8 @@ model RefreshToken {
 
   user    User     @relation(fields: [userId], references: [id])
   company Company? @relation(fields: [companyId], references: [id])
+
+  // userId and companyId FK indexes created automatically by MySQL
+  @@index([isActive])
+  @@index([expiresAt]) // cleanup job: find expired tokens
 }

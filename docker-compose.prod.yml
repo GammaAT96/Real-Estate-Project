@@ -1,0 +1,124 @@
+# ─────────────────────────────────────────────────────────────
+# Production Docker Compose
+#
+# Usage:
+#   1. Copy .env.prod.example → .env.prod
+#   2. Fill in real secrets
+#   3. Run:
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+#   Open http://localhost
+# ─────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+
+  # ───────────────────────────────────────────────────────────
+  # MySQL 8 Database
+  # ───────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: real_estate_mysql
+    restart: unless-stopped
+
+    command: >
+      --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    networks:
+      - real_estate_net
+
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # ───────────────────────────────────────────────────────────
+  # Backend (Node.js / Express API)
+  # ───────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./real-estate-backend
+      dockerfile: Dockerfile
+      target: runner
+
+    container_name: real_estate_backend
+    restart: unless-stopped
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+
+      DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
+
+      SENTRY_DSN: ${SENTRY_DSN:-}
+
+    expose:
+      - "5000"
+
+    networks:
+      - real_estate_net
+
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:5000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ───────────────────────────────────────────────────────────
+  # Frontend (React + nginx)
+  # ───────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./real-estate-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost
+
+    container_name: real_estate_frontend
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    ports:
+      - "80:80"
+
+    networks:
+      - real_estate_net
+
+# ─────────────────────────────────────────────────────────────
+# Persistent Volumes
+# ─────────────────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    driver: local
+
+# ─────────────────────────────────────────────────────────────
+# Internal Network
+# ─────────────────────────────────────────────────────────────
+networks:
+  real_estate_net:
+    driver: bridge

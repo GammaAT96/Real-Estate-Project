@@ -8,11 +8,20 @@ export const getSummary = async (
 ) => {
   try {
     const summary = await dashboardService.getSummary(req.user!);
+    res.status(200).json({ success: true, data: summary });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    res.status(200).json({
-      success: true,
-      data: summary,
-    });
+export const getMonthlyTrends = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const trends = await dashboardService.getMonthlyTrends(req.user!);
+    res.status(200).json({ success: true, data: trends });
   } catch (error) {
     next(error);
   }

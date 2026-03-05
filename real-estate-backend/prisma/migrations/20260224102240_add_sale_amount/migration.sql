@@ -8,7 +8,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `sale` DROP COLUMN `clientName`,
+ALTER TABLE `Sale` DROP COLUMN `clientName`,
     DROP COLUMN `saleDate`,
     ADD COLUMN `companyId` VARCHAR(191) NOT NULL,
     ADD COLUMN `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

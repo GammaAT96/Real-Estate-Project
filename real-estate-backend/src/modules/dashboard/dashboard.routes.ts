@@ -62,4 +62,11 @@ router.get(
   dashboardController.getSummary
 );
 
+router.get(
+  "/trends",
+  authenticate,
+  authorizeRoles("SUPER_ADMIN", "COMPANY_ADMIN"),
+  dashboardController.getMonthlyTrends
+);
+
 export default router;
