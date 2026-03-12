@@ -14,6 +14,8 @@ import ProjectsPage from "@/features/projects/ProjectsPage";
 import PlotsPage from "@/features/plots/PlotsPage";
 import BookingsPage from "@/features/bookings/BookingsPage";
 import SalesPage from "@/features/sales/SalesPage";
+import DuesPage from "@/features/dues/DuesPage";
+import LeadsPage from "@/features/leads/LeadsPage";
 
 // ─── Route Guards ─────────────────────────────────────────
 
@@ -75,10 +77,12 @@ const AppRoutes: React.FC = () => (
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/leads" element={<LeadsPage />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/plots" element={<PlotsPage />} />
             <Route path="/bookings" element={<BookingsPage />} />
             <Route path="/sales" element={<SalesPage />} />
+            <Route path="/dues" element={<DuesPage />} />
 
             {/* SUPER_ADMIN only */}
             <Route

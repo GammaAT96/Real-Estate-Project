@@ -55,6 +55,54 @@ export interface Sale {
     companyId?: string;
 }
 
+export type LeadStatus = 'NEW' | 'CONTACTED' | 'VISIT_SCHEDULED' | 'NEGOTIATION' | 'WON' | 'LOST';
+
+export interface Lead {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string | null;
+    status: LeadStatus;
+    source?: string | null;
+    notes?: string | null;
+    companyId: string;
+    projectId?: string | null;
+    plotId?: string | null;
+    assignedToId?: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type InstallmentStatus = 'DUE' | 'PAID' | 'WAIVED';
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER' | 'UPI' | 'CHEQUE' | 'CARD' | 'OTHER';
+
+export interface Installment {
+    id: string;
+    saleId: string;
+    companyId: string;
+    number: number;
+    amount: number;
+    dueDate: string;
+    status: InstallmentStatus;
+    paidAt?: string | null;
+    paidAmount?: number | null;
+    method?: PaymentMethod | null;
+    reference?: string | null;
+    receivedBy?: Pick<User, 'id' | 'username' | 'role'> | null;
+    sale?: Sale & { plot?: Plot & { project?: Project } };
+}
+
+export interface DuesSummary {
+    dueCount: number;
+    dueAmount: number;
+    overdueCount: number;
+    overdueAmount: number;
+    dueNext7DaysCount: number;
+    dueNext7DaysAmount: number;
+    paidThisMonthCount: number;
+    paidThisMonthAmount: number;
+}
+
 export interface DashboardSummary {
     totalCompanies: number;
     totalProjects: number;
@@ -64,14 +112,6 @@ export interface DashboardSummary {
     soldPlots: number;
     totalSalesCount: number;
     totalRevenue: number;
-}
-
-export interface AuthContextType {
-    user: User | null;
-    accessToken: string | null;
-    login: (username: string, password: string) => Promise<void>;
-    logout: () => Promise<void>;
-    isAuthenticated: boolean;
 }
 
 export interface PaginationMeta {

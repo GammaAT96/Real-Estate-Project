@@ -35,6 +35,30 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum LeadStatus {
+  NEW
+  CONTACTED
+  VISIT_SCHEDULED
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum InstallmentStatus {
+  DUE
+  PAID
+  WAIVED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  UPI
+  CHEQUE
+  CARD
+  OTHER
+}
+
 //////////////////////////////////////////////////////
 // MODELS
 //////////////////////////////////////////////////////
@@ -48,6 +72,8 @@ model Company {
   users         User[]
   projects      Project[]
   sales         Sale[]
+  installments  Installment[]
+  leads         Lead[]
   refreshTokens RefreshToken[]
 
   // NOTE: Company has no FK fields to index — it's the root tenant model
@@ -68,6 +94,8 @@ model User {
 
   bookings      Booking[]
   sales         Sale[]
+  leads         Lead[]
+  receivedInstallments Installment[] @relation("InstallmentReceivedBy")
   refreshTokens RefreshToken[]
 
   // companyId FK is already indexed by MySQL automatically
@@ -91,6 +119,7 @@ model Project {
   company   Company @relation(fields: [companyId], references: [id])
 
   plots Plot[]
+  leads Lead[]
 
   // companyId FK is already indexed by MySQL automatically
   @@index([status])
@@ -114,6 +143,7 @@ model Plot {
 
   bookings Booking[]
   sale     Sale?
+  leads    Lead[]
 
   @@unique([plotNumber, projectId])
 
@@ -158,11 +188,71 @@ model Sale {
   plot    Plot    @relation(fields: [plotId], references: [id])
   agent   User    @relation(fields: [agentId], references: [id])
   company Company @relation(fields: [companyId], references: [id])
+  installments Installment[]
 
   // plotId, agentId, companyId FK indexes created automatically by MySQL
   @@index([createdAt]) // sort by date
   @@index([companyId, createdAt]) // tenant revenue queries (dashboard trends)
   @@index([agentId, createdAt])   // agent performance queries
+}
+
+//////////////////////////////////////////////////////
+
+model Installment {
+  id        String            @id @default(uuid())
+  saleId    String
+  companyId String
+  number    Int
+
+  amount    Decimal           @db.Decimal(12, 2)
+  dueDate   DateTime
+  status    InstallmentStatus @default(DUE)
+
+  paidAt      DateTime?
+  paidAmount  Decimal?        @db.Decimal(12, 2)
+  method      PaymentMethod?
+  reference   String?
+  receivedById String?
+
+  createdAt DateTime @default(now())
+
+  sale       Sale    @relation(fields: [saleId], references: [id])
+  company    Company @relation(fields: [companyId], references: [id])
+  receivedBy User?   @relation("InstallmentReceivedBy", fields: [receivedById], references: [id])
+
+  @@unique([saleId, number])
+  @@index([companyId, dueDate])
+  @@index([companyId, status, dueDate])
+  @@index([saleId, status])
+}
+
+//////////////////////////////////////////////////////
+
+model Lead {
+  id        String     @id @default(uuid())
+  name      String
+  phone     String
+  email     String?
+  status    LeadStatus @default(NEW)
+  source    String?
+  notes     String?
+
+  companyId String
+  projectId String?
+  plotId    String?
+  assignedToId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company    Company @relation(fields: [companyId], references: [id])
+  project    Project? @relation(fields: [projectId], references: [id])
+  plot       Plot?    @relation(fields: [plotId], references: [id])
+  assignedTo User?    @relation(fields: [assignedToId], references: [id])
+
+  @@index([companyId, status])
+  @@index([companyId, assignedToId, status])
+  @@index([projectId, status])
 }
 
 //////////////////////////////////////////////////////

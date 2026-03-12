@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     Building2, Users, LayoutDashboard, FolderKanban,
-    MapPin, Calendar, DollarSign, LogOut,
+    MapPin, Calendar, DollarSign, LogOut, CreditCard,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,13 @@ interface NavItem {
 const navItems: NavItem[] = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/users', label: 'Users', icon: Users },
+    { to: '/leads', label: 'Leads', icon: Users },
     { to: '/companies', label: 'Companies', icon: Building2, superAdminOnly: true },
     { to: '/projects', label: 'Projects', icon: FolderKanban },
     { to: '/plots', label: 'Plots', icon: MapPin },
     { to: '/bookings', label: 'Bookings', icon: Calendar },
     { to: '/sales', label: 'Sales', icon: DollarSign },
+    { to: '/dues', label: 'Dues', icon: CreditCard },
 ];
 
 const SidebarContent: React.FC = () => {

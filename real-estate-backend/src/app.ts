@@ -21,6 +21,8 @@ import plotRoutes from "./modules/plot/plot.routes.js";
 import bookingRoutes from "./modules/booking/booking.routes.js";
 import saleRoutes from "./modules/sale/sale.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
+import installmentRoutes from "./modules/installment/installment.routes.js";
+import leadRoutes from "./modules/lead/lead.routes.js";
 
 const app = express();
 
@@ -100,6 +102,8 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/sales", saleRoutes);
 // Routes
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api", installmentRoutes);
+app.use("/api", leadRoutes);
 
 // Sentry error handler (v8+)
 Sentry.setupExpressErrorHandler(app);
